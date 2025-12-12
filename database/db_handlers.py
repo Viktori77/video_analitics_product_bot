@@ -11,6 +11,7 @@ class DatabaseOperations:
         self.engine = create_async_engine(db_url)
         self.Session = async_sessionmaker(bind=self.engine)
     
+            
     async def execute_query(self, sql_query: str) -> Optional[Any]:
         """Выполнение SQL запроса и возврат результата"""
         try:

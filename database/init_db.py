@@ -285,7 +285,7 @@ async def count_records(session):
         return 0, 0
 
 
-async def main():
+async def main_db():
     """Основная функция для заполнения базы данных"""
     from decouple import config
     
@@ -327,4 +327,4 @@ async def main():
         logger.info(f"Итоговое количество снимков в БД: {snapshots_count}")
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(main_db())
