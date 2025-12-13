@@ -48,7 +48,7 @@ JSON_FILE_PATH=data/videos.json
 
 2. **Не забудьте установить и активировать виртуальное окружение.**
 
-# Для windows:
+Для windows:
 
 ```bash
 python -m venv .venv
