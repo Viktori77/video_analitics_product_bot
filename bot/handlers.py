@@ -60,9 +60,9 @@ async def cmd_help(message: Message):
         """
     await message.answer(help_text)
 
-@router.message(Gen.wait)
-async def stop_flood(message: Message):
-    await message.answer('Подождите, ваш запрос генерируется.')
+# @router.message(Gen.wait)
+# async def stop_flood(message: Message):
+#     await message.answer('Подождите, ваш запрос генерируется.')
 
 @router.message()
 async def generating(message: Message, state: FSMContext):
@@ -70,8 +70,8 @@ async def generating(message: Message, state: FSMContext):
         await message.answer("База данных не инициализирована. Проверьте настройки подключения.")
         return
 
-    # Сразу отправляем сообщение о том, что запрос обрабатывается
-    wait_msg = await message.answer('Подождите, ваш запрос генерируется...')
+    # # Сразу отправляем сообщение о том, что запрос обрабатывается
+    # wait_msg = await message.answer('Подождите, ваш запрос генерируется...')
 
     await state.set_state(Gen.wait)
     
@@ -138,7 +138,7 @@ async def generating(message: Message, state: FSMContext):
         await message.answer(f"Произошла ошибка: {str(e)}")
     
     finally:
-        await wait_msg.delete()
+        # await wait_msg.delete()
         await state.clear()
 
 
