@@ -1,18 +1,28 @@
-from aiogram import Router, F, Bot
+from aiogram import Router, F
 from aiogram.filters import CommandStart, Command
-from aiogram.types import Message, CallbackQuery, FSInputFile, ReplyKeyboardRemove, ContentType, BufferedInputFile
+from aiogram.types import Message
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 import logging
+from nlp.query_parser import parse_with_openai
+from database.db_handlers import DatabaseOperations
+from decouple import config
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 router = Router()
+# Создаем экземпляр DatabaseOperations
+DB = config('DB')
+LOGIN = config('LOGIN')
+PASSWORD = config('PASSWORD')
+HOST = config('HOST')
+DB_URL=f'postgresql+asyncpg://{LOGIN}:{PASSWORD}@{HOST}:5432/{DB}'
+db_operations = DatabaseOperations(DB_URL)
 
 # Состояния для вопроса от пользователя
-class MessageUser(StatesGroup):
-    wait_message_user = State()
+class Gen(StatesGroup):
+    wait = State()
 
 @router.message(CommandStart())
 async def cmd_start(message: Message):
@@ -48,68 +58,86 @@ async def cmd_help(message: Message):
         """
     await message.answer(help_text)
 
-def register_handlers(dp, bot_instance):
-    """Регистрация всех обработчиков"""
+@router.message(Gen.wait)
+async def stop_flood(message: Message):
+    await message.answer('Подождите, ваш запрос генерируется.')
+
+@router.message()
+async def generating(message: Message, state: FSMContext):
+    if db_operations is None:
+        await message.answer("База данных не инициализирована. Проверьте настройки подключения.")
+        return
+
+    # Сразу отправляем сообщение о том, что запрос обрабатывается
+    wait_msg = await message.answer('Подождите, ваш запрос генерируется...')
+
+    await state.set_state(Gen.wait)
     
-    # Сохраняем bot_instance в данных диспетчера
-    dp['bot_instance'] = bot_instance
-    
-    @router.message()
-    async def handle_text_message(message: Message, state: FSMContext):
-        """Обработчик текстовых сообщений"""
-        try:
-            # Получаем bot_instance из данных диспетчера
-            bot_instance = dp['bot_instance']
-            
-            user_query = message.text.strip()
-            logger.info(f"Получен запрос: {user_query}")
-            
-            if not user_query:
-                await message.answer("Пожалуйста, задайте вопрос")
-                return
-            
-            # Показываем индикатор "печатает"
-            await bot_instance.bot.send_chat_action(
-                chat_id=message.chat.id,
-                action="typing"
-            )
-            
-            # Парсим запрос в SQL
-            sql_query = bot_instance.nlp_parser.parse_query_to_sql(user_query)
-            logger.info(f"Сгенерирован SQL: {sql_query}")
-            
-            # Выполняем запрос
-            result = await bot_instance.db_ops.execute_query(sql_query)
-            
-            # Форматируем ответ
-            if result is None:
-                response = "Не удалось получить данные"
-            else:
-                # Извлекаем числовое значение
-                if isinstance(result, (list, tuple)) and len(result) > 0:
-                    if isinstance(result[0], (list, tuple)) and len(result[0]) > 0:
-                        value = result[0][0]
-                    else:
-                        value = result[0]
+    if not message.text:
+        await message.answer("Пожалуйста, задайте вопрос")
+        await state.clear()
+        return
+        
+    try:
+        sql_query = await parse_with_openai(message.text)
+        logger.info(f"Сгенерирован SQL: {sql_query}")
+
+        if not sql_query:
+            await message.answer("Не удалось сгенерировать SQL запрос")
+            await state.clear()
+            return
+
+        # Выполняем запрос через экземпляр класса
+        result = await db_operations.execute_query(sql_query)
+
+        # Форматируем ответ
+        if result is None:
+            response = "Не удалось получить данные"
+        else:
+            # Извлекаем числовое значение
+            if isinstance(result, (list, tuple)) and len(result) > 0:
+                if isinstance(result[0], (list, tuple)) and len(result[0]) > 0:
+                    value = result[0][0]
                 else:
-                    value = result
+                    value = result[0]
+            else:
+                value = result
+            
+            # Преобразуем Decimal в строку
+            from decimal import Decimal
+            if isinstance(value, Decimal):
+                # Преобразуем Decimal в int или float для форматирования
+                if value % 1 == 0:
+                    value = int(value)
+                else:
+                    value = float(value)
+            
+            # Форматирование числа
+            try:
+                if isinstance(value, (int, float)):
+                    # Форматируем с разделителями тысяч
+                    formatted = f"{value:,}".replace(',', ' ')
+                    response = formatted
+                else:
+                    # Просто преобразуем в строку
+                    response = str(value)
+            except Exception as e:
+                logger.error(f"Ошибка форматирования: {e}")
+                response = str(value)
+        
+        # Убедимся, что response - строка
+        if not isinstance(response, str):
+            response = str(response)
                 
-                # Форматирование числа
-                try:
-                    if isinstance(value, (int, float)):
-                        response = f"📊 Результат: {value:,}".replace(',', ' ')
-                    else:
-                        response = f"📊 Результат: {value}"
-                except:
-                    response = f"📊 Результат: {value}"
-            
-            await message.answer(response)
-            
-        except Exception as e:
-            logger.error(f"Ошибка обработки запроса: {e}", exc_info=True)
-            await message.answer("Произошла ошибка при обработке запроса. Попробуйте переформулировать вопрос.")
+        await message.answer(response)
+
+    except Exception as e:
+        logger.error(f"Ошибка: {e}")
+        await message.answer(f"Произошла ошибка: {str(e)}")
     
-    # Включаем роутер в диспетчер
-    dp.include_router(router)
+    finally:
+        await wait_msg.delete()
+        await state.clear()
+
 
 

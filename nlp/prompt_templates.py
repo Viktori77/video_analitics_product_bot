@@ -33,6 +33,7 @@ SQL_SCHEMA = """
 - "сумма просмотров" → SUM(views_count)
 - "сколько видео" → COUNT(DISTINCT video_id) или COUNT(*)
 - "прирост просмотров" → SUM(delta_views_count)
+- "на сколько просмотров" → SUM(delta_views_count)
 - "больше 100000" → > 100000
 
 3. Особые случаи:

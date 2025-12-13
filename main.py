@@ -32,7 +32,6 @@ async def main():
     PASSWORD = os.getenv('PASSWORD')
     HOST = os.getenv('HOST')
     
-    # JSON_FILE_PATH = os.getenv('JSON_FILE_PATH')
     
     if not TELEGRAM_TOKEN:
         logger.error("Не задан TELEGRAM_TOKEN в переменных окружения")
@@ -41,16 +40,11 @@ async def main():
     if not OPENAI_API_KEY:
         logger.error("Не задан OPENAI_API_KEY в переменных окружения")
         sys.exit(1)
-    
-    # # Проверяем наличие JSON файла
-    # if not os.path.exists(JSON_FILE_PATH):
-    #     logger.error(f"JSON файл не найден: {JSON_FILE_PATH}")
-    #     sys.exit(1)
-    
+        
     # Инициализация базы данных
     logger.info("Инициализация базы данных...")
     try:
-        await main_db() # потом нужно включить
+        # await main_db() # потом нужно включить
         logger.info("База данных инициализирована")
     except Exception as e:
         logger.error(f"Ошибка инициализации базы данных: {e}")
@@ -59,8 +53,7 @@ async def main():
     # Запуск бота
     logger.info("Запуск Telegram бота...")
     try:
-        DB_URL=f'postgresql+asyncpg://{LOGIN}:{PASSWORD}@{HOST}:5432/{DB}'
-        bot = VideoAnalyticsBot(TELEGRAM_TOKEN, DB_URL, OPENAI_API_KEY)
+        bot = VideoAnalyticsBot(TELEGRAM_TOKEN)
         await bot.run()
     except Exception as e:
         logger.error(f"Ошибка запуска бота: {e}")
