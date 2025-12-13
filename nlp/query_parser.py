@@ -1,13 +1,9 @@
 from openai import AsyncOpenAI
-import re
 import logging
 from decouple import config
 from nlp.prompt_templates import SQL_SCHEMA
 
-
-
 logger = logging.getLogger(__name__)
-from openai import OpenAI
 
 OPENAI_API_KEY=config('OPENAI_API_KEY')
 

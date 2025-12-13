@@ -12,17 +12,19 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 router = Router()
-# Создаем экземпляр DatabaseOperations
-DB = config('DB')
-LOGIN = config('LOGIN')
-PASSWORD = config('PASSWORD')
-HOST = config('HOST')
-DB_URL=f'postgresql+asyncpg://{LOGIN}:{PASSWORD}@{HOST}:5432/{DB}'
-db_operations = DatabaseOperations(DB_URL)
+
+# Глобальная переменная для DatabaseOperations
+db_operations = None
 
 # Состояния для вопроса от пользователя
 class Gen(StatesGroup):
     wait = State()
+
+# Функция для установки DatabaseOperations
+def set_db_operations(db_ops):
+    global db_operations
+    db_operations = db_ops
+    logger.info("DatabaseOperations установлен в handlers")
 
 @router.message(CommandStart())
 async def cmd_start(message: Message):
