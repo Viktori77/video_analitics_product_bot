@@ -117,8 +117,8 @@ async def generating(message: Message, state: FSMContext):
             # Форматирование числа
             try:
                 if isinstance(value, (int, float)):
-                    # Форматируем с разделителями тысяч
-                    formatted = f"{value:,}".replace(',', ' ')
+                    # Форматируем без разделителей тысяч
+                    formatted = f"{value:,}".replace(',', '')
                     response = formatted
                 else:
                     # Просто преобразуем в строку
