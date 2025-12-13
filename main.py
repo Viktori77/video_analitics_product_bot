@@ -50,7 +50,7 @@ async def main():
     # Инициализация базы данных
     logger.info("Инициализация базы данных...")
     try:
-        # await main_db() # потом нужно включить
+        await main_db() # потом нужно включить
         logger.info("База данных инициализирована")
     except Exception as e:
         logger.error(f"Ошибка инициализации базы данных: {e}")
