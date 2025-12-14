@@ -18,7 +18,6 @@
 
 ```env
 TELEGRAM_TOKEN=YOUR_TELEGRAM_BOT_TOKEN
-ADMINS=ADMINid1
 
 LOGIN=LOGIN_DB
 PASSWORD=PASSWORD_DB
@@ -31,11 +30,12 @@ JSON_FILE_PATH=data/videos.json
 ```
 
 - `TELEGRAM_TOKEN` - токен Telegram-бота.
-- `ADMINS` - Список из TelegramIDs администраторов.
 - `LOGIN` - логин в базе данных.
 - `PASSWORD` - пароль в базе данных.
 - `HOST` - номер хоста в базе данных.
 - `DB` - имя базы данных.
+- `OPENAI_API_KEY` - ключ для работы с моделью LLM.
+- `JSON_FILE_PATH` - путь к video.json.
 
 ## Установка проекта
 
