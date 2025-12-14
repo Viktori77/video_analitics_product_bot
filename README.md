@@ -79,6 +79,7 @@ python -m venv .venv
 
 ```bash
    CREATE DATABASE name_db;
+   GRANT ALL PRIVILEGES ON DATABASE name_db TO user;
    \c name_db;
    GRANT ALL ON schema public TO user;
 ```
